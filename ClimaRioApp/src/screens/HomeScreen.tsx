@@ -32,6 +32,7 @@ import { useFonts } from 'expo-font';
 import AppLoading from 'expo-app-loading';
 import { buscarPluviometros } from '../utils/buscarPluviometros';
 import { buscarAvisosImportantes } from '../utils/buscarAvisosImportantes';
+import { buscarAvisosDeTransito } from '../utils/buscarAvisosDeTransito';
 
 
 
@@ -54,20 +55,22 @@ const obterTemaVisual = (descricaoClima, hora) => {
   } else if (
     desc.includes('nublado') ||
     desc.includes('muitas nuvens') ||
+    desc.includes('névoa') ||
     desc.includes('céu encoberto')
   ) {
     fundo = ehNoite ? fundoNubladoNoite : fundoNubladoDia;
     texto = ehNoite ? '#eceded' : '#eceded';
   } else if (
     desc.includes('limpo') ||
-    desc.includes('nuvens dispersas') ||
+    desc.includes('calor') ||
     desc.includes('céu claro') ||
     desc.includes('ensolarado')
   ) {
     fundo = ehNoite ? fundoNoiteLimpa : fundoDiaLimpo;
     texto = ehNoite ? '#eceded' : '#13335a';
   } else if (
-    desc.includes('algumas nuvens')
+    desc.includes('algumas nuvens') ||
+    desc.includes('nuvens dispersas')
   ) {
     fundo = ehNoite ? fundoalgumasnuvensnoite : fundoalgumasnuvens;
     texto = ehNoite ? '#eceded' : '#13335a';
@@ -104,6 +107,7 @@ const escolherAnimacaoCard = (descricao, ehNoite) => {
   if (d.includes('vento')) return require('../../assets/lottie/vento.json');
   if (d.includes('neblina')) return require('../../assets/lottie/nublado-dia.json');
   if (d.includes('algumas nuvens')) return require('../../assets/lottie/nublado-dia.json');
+  if (d.includes('nuvens dispersas')) return require('../../assets/lottie/nuvem-nublado.json');
   if (d.includes('claro') || d.includes('sol') || d.includes('limpo'))
     return ehNoite ? require('../../assets/lottie/noite.json') : require('../../assets/lottie/sol.json');
   return ehNoite ? require('../../assets/lottie/noite.json') : require('../../assets/lottie/sol.json');
@@ -193,6 +197,7 @@ export default function HomeScreen() {
   const [avisos, setAvisos] = useState([]);
   const [modalAviso, setModalAviso] = useState(false);
   const [avisoSelecionado, setAvisoSelecionado] = useState<Aviso | null>(null);
+  
 
 
   const mapaNiveisCalor = {
@@ -233,23 +238,26 @@ export default function HomeScreen() {
     '5': '🚨 Nível 5: Calor muito perigoso. Situação de alerta máximo, procure abrigo e siga orientações das autoridades.',
   };
 
-  
+
   useEffect(() => {
     const carregarAvisos = async () => {
       if (!bairroSelecionado) return;
-      const lista = await buscarAvisosImportantes(bairroSelecionado);
+  
+      const zona = zonaDoBairro(bairroSelecionado);
+      const lista = await buscarAvisosImportantes(zona);
       setAvisos(lista);
     };
   
     carregarAvisos();
   }, [bairroSelecionado]);
   
+  
   const [avisosTransito, setAvisosTransito] = useState([]);
 
+  //Informações sobre card de avisos
   useEffect(() => {
     const carregarTransito = async () => {
-      const zona = zonaDoBairro(bairroSelecionado); // função que você vai criar logo abaixo
-      const avisos = await buscarAvisosDeTransito(zona);
+      const avisos = await buscarAvisosDeTransito(bairroSelecionado); // ✅ CORRETO
       setAvisosTransito(avisos);
     };
 
@@ -257,6 +265,7 @@ export default function HomeScreen() {
       carregarTransito();
     }
   }, [bairroSelecionado]);
+ 
 
   
 
@@ -462,7 +471,7 @@ export default function HomeScreen() {
   const buscarDescricaoDoClima = async () => {
     try {
       console.log('🌐 Buscando descrição do clima...');
-      const resposta = await fetch("https://0524-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
+      const resposta = await fetch("https://5f07-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
       const dados = await resposta.json();
       console.log('📝 Descrição recebida:', dados.descricao);
       return dados.descricao;
@@ -644,11 +653,19 @@ export default function HomeScreen() {
             {/* Trânsito e Eventos */}
             <CardDuploCarrossel
               titulo1="🚗 Trânsito"
-              style={[estilos.card, estilos.blocoLado, { backgroundColor: 'rgba(232, 232, 232, 0.5)' }]}
-              paginas1={[
-                <View key="1"><Text style={{ color: temaVisual.texto }}>🚧 Av. Brasil com congestionamento: {indiceUV}</Text></View>,
-                <View key="2"><Text style={{ color: temaVisual.texto }}>🚣️ Linha Amarela fluindo bem</Text></View>,
-              ]}
+              paginas1={
+                avisosTransito.length > 0
+                  ? avisosTransito.map((aviso, index) => (
+                      <View key={index}>
+                        <Text style={{ color: temaVisual.texto }}>{aviso.titulo}</Text>
+                      </View>
+                    ))
+                  : [
+                      <View key="1">
+                        <Text style={{ color: temaVisual.texto }}>Sem avisos de trânsito</Text>
+                      </View>,
+                    ]
+              }
               titulo2="🎉 Eventos na cidade"
               paginas2={[
                 <View key="1"><Text style={{ color: temaVisual.texto }}>• Show na Lapa com DJs - 20h</Text></View>,
@@ -659,7 +676,7 @@ export default function HomeScreen() {
               corCard={temaVisual.card}
             />
 
-            {/* Índice UV e Maré */}
+            {/* Nivel de calor e ventos */}
             <CardDuploCarrossel
                 titulo1=""
                 paginas1={[

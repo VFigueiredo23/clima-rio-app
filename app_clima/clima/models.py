@@ -12,7 +12,7 @@ ZONAS_CHOICES = [
 TIPO_CHOICES = [
     ('clima', 'Clima'),
     ('evento', 'Evento'),
-    ('transito', 'Trânsito'),
+    ('transito', 'transito'),
 ]
 
 
