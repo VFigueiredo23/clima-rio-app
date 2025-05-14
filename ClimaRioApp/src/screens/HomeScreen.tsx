@@ -177,6 +177,12 @@ export default function HomeScreen() {
   const [mare, setMare] = useState('Maré Alta');
   const [sirenes, setSirenes] = useState('3 sirenes ativas em comunidades do Rio');
   const [pluviometros, setPluviometros] = useState('Chuva forte em Copacabana e Tijuca');
+  const [chuvaPluviometro, setChuvaPluviometro] = useState({
+    estaChovendo: false,
+    intensidade: 'nenhuma',
+    descricao: 'Sem chuva',
+  });
+
   const [cameras, setCameras] = useState([]);
   const [mostrarModalRadar, setMostrarModalRadar] = useState(false);
   const [cameraSelecionada, setCameraSelecionada] = useState(null);
@@ -238,6 +244,19 @@ export default function HomeScreen() {
     '5': '🚨 Nível 5: Calor muito perigoso. Situação de alerta máximo, procure abrigo e siga orientações das autoridades.',
   };
 
+  const interpretarChuvaPluviometro = (chuva_mm: number) => {
+    if (chuva_mm >= 15) {
+      return { estaChovendo: false, intensidade: 'forte', descricao: 'Chuva forte' };
+    } else if (chuva_mm >= 5) {
+      return { estaChovendo: false, intensidade: 'moderada', descricao: 'Chuva moderada' };
+    } else if (chuva_mm > 0) {
+      return { estaChovendo: false, intensidade: 'fraca', descricao: 'Chuva fraca' };
+    } else {
+      return { estaChovendo: true, intensidade: 'nenhuma', descricao: 'Sem chuva' };
+    }
+  };
+
+
 
   useEffect(() => {
     const carregarAvisos = async () => {
@@ -265,6 +284,23 @@ export default function HomeScreen() {
       carregarTransito();
     }
   }, [bairroSelecionado]);
+
+  useEffect(() => {
+    const carregarPluviometro = async () => {
+      const texto = await buscarPluviometros(); // Você já tem esta função
+      setPluviometros(texto);
+
+      // Simulação de dado real para integração:
+      const dadoSimulado = { chuva_1h: 8 }; // depois substitua pelo dado real
+      const interpretacao = interpretarChuvaPluviometro(dadoSimulado.chuva_1h);
+      setChuvaPluviometro(interpretacao);
+    };
+
+    if (bairroSelecionado) {
+      carregarPluviometro();
+    }
+  }, [bairroSelecionado]);
+
  
 
   
@@ -289,7 +325,9 @@ export default function HomeScreen() {
     verificarBairroSalvo();
   }, []);
 
-  const descricaoClima = climaSelecionado?.descricao || '';
+  const descricaoClima = chuvaPluviometro.estaChovendo
+    ? `${chuvaPluviometro.descricao} no bairro ${bairroSelecionado}`
+    : climaSelecionado?.descricao || '';
 
   const { animacaoFundo, temaVisual } = useMemo(() => {
     if (!descricaoClima) {
@@ -303,17 +341,35 @@ export default function HomeScreen() {
         },
       };
     }
-  
+
+    // Priorizar o pluviômetro para fundo
+    if (chuvaPluviometro.estaChovendo) {
+      const tema = obterTemaVisual(chuvaPluviometro.descricao, horaAtual);
+      const animacao =
+        chuvaPluviometro.intensidade === 'forte'
+          ? require('../../assets/lottie/chuva-forte-bg.json')
+          : require('../../assets/lottie/chuva-fraca-bg.json');
+
+      console.log('🌧️ Tema via Pluviômetro:', { tema, animacao });
+
+      return {
+        animacaoFundo: animacao,
+        temaVisual: tema,
+      };
+    }
+
+    // Fallback para API externa
     const tema = obterTemaVisual(descricaoClima, horaAtual);
     const animacao = escolherAnimacaoFundo(descricaoClima, ehNoite);
-  
+
     console.log('🎨 Tema e animação atualizados:', { tema, animacao });
-  
+
     return {
       animacaoFundo: animacao,
       temaVisual: tema,
     };
-  }, [descricaoClima, horaAtual, ehNoite]);
+  }, [descricaoClima, horaAtual, ehNoite, chuvaPluviometro]);
+
   
 
   
@@ -471,7 +527,7 @@ export default function HomeScreen() {
   const buscarDescricaoDoClima = async () => {
     try {
       console.log('🌐 Buscando descrição do clima...');
-      const resposta = await fetch("https://5f07-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
+      const resposta = await fetch("https://83a0-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
       const dados = await resposta.json();
       console.log('📝 Descrição recebida:', dados.descricao);
       return dados.descricao;
@@ -733,10 +789,14 @@ export default function HomeScreen() {
               ]}
               titulo2="🌧️ Pluviômetros"
               paginas2={[
-                <View key="1"><Text style={{ color: temaVisual.texto }}>{pluviometros}</Text></View>,
+                <View key="1">
+                  <Text style={{ color: temaVisual.texto }}>
+                    {pluviometros.chuva_1h > 0
+                      ? `Choveu ${pluviometros.chuva_1h} mm na última hora`
+                      : 'Sem registro de chuva no momento'}
+                  </Text>
+                </View>,
               ]}
-              corTexto={temaVisual.texto}
-              corCard={temaVisual.card}
             />
 
             {/* Câmeras ao Vivo */}
