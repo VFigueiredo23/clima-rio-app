@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 6,
     justifyContent: 'space-between',
-    //backgroundColor: 'rgba(232, 232, 232, 0.5)',
+    backgroundColor: 'rgba(232, 232, 232, 0)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000',
@@ -135,7 +135,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     marginTop: 15,
-    fontFamily: 'CeraPro-Black'
+    fontFamily: 'CeraPro-Black',
+
   },
   titulo: {
     fontSize: 20,

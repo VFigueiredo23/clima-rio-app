@@ -33,6 +33,8 @@ import AppLoading from 'expo-app-loading';
 import { buscarPluviometros } from '../utils/buscarPluviometros';
 import { buscarAvisosImportantes } from '../utils/buscarAvisosImportantes';
 import { buscarAvisosDeTransito } from '../utils/buscarAvisosDeTransito';
+import estagio1 from '../../assets/images/estagio-1.png';
+import CardEstagio from '../../src/components/CardEstagio';
 
 
 
@@ -81,7 +83,7 @@ const obterTemaVisual = (descricaoClima, hora) => {
     nome: ehNoite ? 'noite' : 'dia',
     fundo,
     texto,
-    card: 'rgba(255, 255, 255, 0.085)',
+    card: 'rgba(255, 255, 255, 0)',
   };
 };
 
@@ -203,6 +205,7 @@ export default function HomeScreen() {
   const [avisos, setAvisos] = useState([]);
   const [modalAviso, setModalAviso] = useState(false);
   const [avisoSelecionado, setAvisoSelecionado] = useState<Aviso | null>(null);
+
   
 
 
@@ -527,7 +530,7 @@ export default function HomeScreen() {
   const buscarDescricaoDoClima = async () => {
     try {
       console.log('🌐 Buscando descrição do clima...');
-      const resposta = await fetch("https://83a0-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
+      const resposta = await fetch("https://69f8-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
       const dados = await resposta.json();
       console.log('📝 Descrição recebida:', dados.descricao);
       return dados.descricao;
@@ -692,6 +695,20 @@ export default function HomeScreen() {
                 }}>
               </View>
             )}
+            <CardEstagio
+              titulo="🚦 Estágio da Cidade"
+              paginas={[
+                <View key="1" style={{ backgroundColor: '#ffdddd', padding: 10 }}>
+                  <Text style={{ color: '#000' }}>Estágio 1: Normal</Text>
+                </View>,
+                <View key="2" style={{ backgroundColor: '#fff3cd', padding: 10 }}>
+                  <Text style={{ color: '#000' }}>Estágio 2: Mobilização</Text>
+                </View>,
+              ]}
+              corTexto={temaVisual.texto}
+              corCard={temaVisual.card}
+            />
+
 
             {/* Quadro de Avisos Importantes */}
             <CardAvisosCarrossel
@@ -722,19 +739,23 @@ export default function HomeScreen() {
                       </View>,
                     ]
               }
-              titulo2="🎉 Eventos na cidade"
-              paginas2={[
-                <View key="1"><Text style={{ color: temaVisual.texto }}>• Show na Lapa com DJs - 20h</Text></View>,
-                <View key="2"><Text style={{ color: temaVisual.texto }}>• Feira Cultural na Praça XV - 16h</Text></View>,
-                <View key="3"><Text style={{ color: temaVisual.texto }}>• Festival Gastronômico - 12h</Text></View>,
-              ]}
-              corTexto={temaVisual.texto}
-              corCard={temaVisual.card}
+              titulo2="💨 Ventos Fortes"
+                paginas2={[
+                    <View key="1">
+                    <Text style={{ color: temaVisual.texto }}>Rajadas moderadas no litoral</Text>
+                    <Text style={{ color: temaVisual.texto }}>Velocidade estimada: 35km/h</Text>
+                    </View>,
+                    <View key="2">
+                    <Text style={{ color: temaVisual.texto }}>Sem risco de ressaca no momento</Text>
+                    </View>,
+                ]}
+                corTexto={temaVisual.texto}
+                corCard={temaVisual.card}
             />
 
             {/* Nivel de calor e ventos */}
             <CardDuploCarrossel
-                titulo1=""
+                
                 paginas1={[
                     <TouchableOpacity
                       key="1"
@@ -751,15 +772,21 @@ export default function HomeScreen() {
                     </TouchableOpacity>,
                   ]}
                   
-                titulo2="💨 Ventos Fortes"
+                
                 paginas2={[
-                    <View key="1">
-                    <Text style={{ color: temaVisual.texto }}>Rajadas moderadas no litoral</Text>
-                    <Text style={{ color: temaVisual.texto }}>Velocidade estimada: 35km/h</Text>
-                    </View>,
-                    <View key="2">
-                    <Text style={{ color: temaVisual.texto }}>Sem risco de ressaca no momento</Text>
-                    </View>,
+                    <TouchableOpacity
+                      key="1"
+                      onPress={() => setMostrarModalCalor(true)}
+                      activeOpacity={0.9}
+                      style={{ borderRadius: 12, overflow: 'hidden' }}
+                    >
+                      <Image
+                        source={estagio1}
+                        style={{ width: 200, height: 150, overflow: 'hidden', marginTop: 0, borderRadius: 22 }}
+                        resizeMode= "cover"
+                      />
+                      
+                    </TouchableOpacity>,
                 ]}
                 corTexto={temaVisual.texto}
                 corCard={temaVisual.card}
@@ -770,14 +797,13 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => setMostrarModalRadar(true)}
               activeOpacity={0.9}
-              style={{ height: 200, marginVertical: 10, width: 350 }}
+              style={{ height: 300, marginVertical: 10, width: '100%' }}
             >
               <Text style={[estilos.blocoTitulo, { color: temaVisual.texto }]}>🌧️ Radar Meteorológico - Sumaré</Text>
               <WebView
                 source={{ uri: "http://www.sistema-alerta-rio.com.br/upload/Mapa/mapaRadar.html" }}
-                style={{ flex: 1 }}
-                scrollEnabled={false}
-                pointerEvents="none"
+                style={{ flex: 1, width: '130%', height: '200%' }}
+                
               />
             </TouchableOpacity>
 
@@ -866,13 +892,13 @@ export default function HomeScreen() {
         <View style={estilos.modalCard}>
           <Text style={estilos.modalTitulo}>🌧️ Radar Meteorológico</Text>
 
-          <View style={{ width: '100%', height: 300, borderRadius: 12, overflow: 'hidden' }}>
+          <View style={{ width: '100%', height: 270, borderRadius: 12, overflow: 'hidden' }}>
             <WebView
               source={{ uri: "http://www.sistema-alerta-rio.com.br/upload/Mapa/mapaRadar.html" }}
               startInLoadingState={true}
               javaScriptEnabled={true}
               domStorageEnabled={true}
-              style={{ flex: 1 }}
+              style={{ flex: 1, width: '130%', height: '200%' }}
             />
           </View>
 
@@ -978,7 +1004,7 @@ const estilos = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     marginTop: 16,
-    backgroundColor: 'rgba(232, 232, 232, 0.08)',
+    backgroundColor: 'rgba(232, 232, 232, 0)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000',

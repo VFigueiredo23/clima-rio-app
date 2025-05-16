@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(232,232,232,0)',
     height: 250,
     overflow: 'hidden',
   },
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     marginRight: 10,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(19,51,90,0.01)',
   },
   tituloAviso: {
     fontSize: 20,
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   },
   gradiente: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -10,
     left: 0,
     right: 5,
     height: 60,

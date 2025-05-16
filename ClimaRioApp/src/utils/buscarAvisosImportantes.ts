@@ -1,6 +1,7 @@
 export const buscarAvisosImportantes = async (bairroUsuario: string) => {
   try {
     const resposta = await fetch("http://10.50.72.69:8000/avisos/");
+    //const resposta = await fetch("http://192.168.0.217:8000/avisos/");
     const dados = await resposta.json();
 
 

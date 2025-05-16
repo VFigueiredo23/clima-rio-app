@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     marginTop: 36,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
     fontFamily: 'CeraPro-Black'
