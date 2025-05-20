@@ -35,6 +35,11 @@ import { buscarAvisosImportantes } from '../utils/buscarAvisosImportantes';
 import { buscarAvisosDeTransito } from '../utils/buscarAvisosDeTransito';
 import estagio1 from '../../assets/images/estagio-1.png';
 import CardEstagio from '../../src/components/CardEstagio';
+import CardTransito from '../components/cardTransito';
+import { buscarRotaGoogle } from '../utils/buscarRota';
+import { GOOGLE_MAPS_API_KEY } from '@env';
+
+
 
 
 
@@ -205,6 +210,7 @@ export default function HomeScreen() {
   const [avisos, setAvisos] = useState([]);
   const [modalAviso, setModalAviso] = useState(false);
   const [avisoSelecionado, setAvisoSelecionado] = useState<Aviso | null>(null);
+  const [rotaTransito, setRotaTransito] = useState(null);
 
   
 
@@ -260,18 +266,50 @@ export default function HomeScreen() {
   };
 
 
+  useEffect(() => {
+    const carregarRota = async () => {
+      const origem = { lat: -22.9068, lng: -43.1729 }; // Exemplo: Centro
+      const destino = { lat: -22.9828, lng: -43.2236 }; // Exemplo: Barra da Tijuca
+
+      const resultado = await buscarRotaGoogle(origem, destino);
+      if (resultado) {
+        setRotaTransito({
+          tempo: resultado.tempo,
+          origem: { latitude: origem.lat, longitude: origem.lng },
+          destino: { latitude: destino.lat, longitude: destino.lng },
+          rota: resultado.rota,
+        });
+      }
+    };
+
+    carregarRota();
+  }, []);
 
   useEffect(() => {
-    const carregarAvisos = async () => {
-      if (!bairroSelecionado) return;
-  
-      const zona = zonaDoBairro(bairroSelecionado);
-      const lista = await buscarAvisosImportantes(zona);
-      setAvisos(lista);
-    };
-  
-    carregarAvisos();
-  }, [bairroSelecionado]);
+  const carregarAvisos = async () => {
+    if (!bairroSelecionado) return;
+
+    const zona = zonaDoBairro(bairroSelecionado);
+    const lista = await buscarAvisosImportantes();
+
+    const avisosPrioritarios = lista.filter((aviso) => aviso.prioridade === true);
+
+    // Filtra por zona
+    const avisosDaZona = avisosPrioritarios.filter(
+      (aviso) => aviso.zona?.toLowerCase() === zona.toLowerCase()
+    );
+
+    // Se houver avisos da zona, use eles. Senão, exibe qualquer aviso prioritário.
+    const resultadoFinal = avisosDaZona.length > 0 ? avisosDaZona : avisosPrioritarios;
+
+    console.log('📥 Avisos importantes filtrados:', resultadoFinal);
+    setAvisos(resultadoFinal);
+  };
+
+  carregarAvisos();
+}, [bairroSelecionado]);
+
+
   
   
   const [avisosTransito, setAvisosTransito] = useState([]);
@@ -279,34 +317,17 @@ export default function HomeScreen() {
   //Informações sobre card de avisos
   useEffect(() => {
     const carregarTransito = async () => {
-      const avisos = await buscarAvisosDeTransito(bairroSelecionado); // ✅ CORRETO
+      if (!bairroSelecionado) return;
+
+      const avisos = await buscarAvisosDeTransito(bairroSelecionado);
+      console.log('🚗 Avisos de trânsito filtrados:', avisos);
       setAvisosTransito(avisos);
     };
 
-    if (bairroSelecionado) {
-      carregarTransito();
-    }
+    carregarTransito();
   }, [bairroSelecionado]);
 
-  useEffect(() => {
-    const carregarPluviometro = async () => {
-      const texto = await buscarPluviometros(); // Você já tem esta função
-      setPluviometros(texto);
 
-      // Simulação de dado real para integração:
-      const dadoSimulado = { chuva_1h: 8 }; // depois substitua pelo dado real
-      const interpretacao = interpretarChuvaPluviometro(dadoSimulado.chuva_1h);
-      setChuvaPluviometro(interpretacao);
-    };
-
-    if (bairroSelecionado) {
-      carregarPluviometro();
-    }
-  }, [bairroSelecionado]);
-
- 
-
-  
 
   // Funções para salvar e recuperar o bairro
   useEffect(() => {
@@ -530,7 +551,7 @@ export default function HomeScreen() {
   const buscarDescricaoDoClima = async () => {
     try {
       console.log('🌐 Buscando descrição do clima...');
-      const resposta = await fetch("https://69f8-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
+      const resposta = await fetch("https://9974-187-111-99-131.ngrok-free.app/clima/?cidade=Rio de Janeiro");
       const dados = await resposta.json();
       console.log('📝 Descrição recebida:', dados.descricao);
       return dados.descricao;
@@ -721,24 +742,52 @@ export default function HomeScreen() {
                 }}
             />
 
+            <CardDuploCarrossel
+              titulo1="🗺️ Mapa de Trânsito"
+              paginas1={[
+                <View key="1" style={{ height: 200 }}>
+                  <WebView
+                    source={{
+                      uri: `https://www.google.com/maps/embed/v1/traffic?key=${GOOGLE_MAPS_API_KEY}&center=-22.9068,-43.1729&zoom=12`
+                    }}
+                    style={{ flex: 1 }}
+                    javaScriptEnabled
+                    domStorageEnabled
+                  />
+                </View>,
+              ]}
+              titulo2="🕓 Tempo Estimado (Simulado)"
+              paginas2={[
+                <View key="1">
+                  <Text style={{ color: temaVisual.texto }}>
+                    Tempo estimado: 34 min até o Centro
+                  </Text>
+                </View>,
+              ]}
+              corTexto={temaVisual.texto}
+              corCard={temaVisual.card}
+            />
+
+
+
 
 
             {/* Trânsito e Eventos */}
             <CardDuploCarrossel
-              titulo1="🚗 Trânsito"
-              paginas1={
-                avisosTransito.length > 0
-                  ? avisosTransito.map((aviso, index) => (
-                      <View key={index}>
-                        <Text style={{ color: temaVisual.texto }}>{aviso.titulo}</Text>
-                      </View>
-                    ))
-                  : [
-                      <View key="1">
-                        <Text style={{ color: temaVisual.texto }}>Sem avisos de trânsito</Text>
-                      </View>,
-                    ]
-              }
+               titulo1="🚗 Trânsito"
+                paginas1={
+                  avisosTransito.length > 0
+                    ? avisosTransito.map((aviso, index) => (
+                        <View key={index}>
+                          <Text style={{ color: temaVisual.texto }}>{aviso.titulo}</Text>
+                        </View>
+                      ))
+                    : [
+                        <View key="1">
+                          <Text style={{ color: temaVisual.texto }}>Sem avisos de trânsito</Text>
+                        </View>,
+                      ]
+                }
               titulo2="💨 Ventos Fortes"
                 paginas2={[
                     <View key="1">
